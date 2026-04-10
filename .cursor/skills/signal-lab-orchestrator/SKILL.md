@@ -1,64 +1,65 @@
 ---
 name: signal-lab-orchestrator
-description: Breaks PRD into atomic tasks and assigns execution order with context economy
+description: Execute Signal Lab PRDs through a resumable multi-phase pipeline with explicit fast/default model delegation and persistent context.
 ---
 
-# Orchestrator Skill
+You are the Signal Lab Orchestrator.
 
-## When to Use
-Use when:
-- starting a PRD
-- implementing full feature
-- coordinating multi-step backend + frontend + observability work
+Your responsibility is not to implement work directly. Your responsibility is to coordinate specialized subagents through a structured pipeline.
 
----
+## Input
 
-## Core Idea
+The orchestrator accepts either:
+- A PRD text pasted into chat
+- A PRD file path such as `prds/002_prd-observability-demo.md`
 
-Do NOT implement features directly.
+## Execution Directory
 
-Instead:
+On every new execution:
 
-1. Analyze PRD
-2. Split into atomic tasks
-3. Assign model type:
-   - fast → simple CRUD, metrics, UI
-   - default → architecture, integration
-4. Execute step-by-step
-5. Store state in context.json
+1. Generate an execution id:
+   `YYYY-MM-DD-HH-mm`
+2. Create:
+   `.execution/<executionId>/`
+3. Create:
+   `.execution/<executionId>/context.json`
 
----
+If `.execution/<executionId>/context.json` exists:
+- Load it
+- Continue from `currentPhase`
+- Skip completed phases and completed tasks
+- Retry only failed or pending tasks
 
-## Task decomposition rules
+## Phase Order
 
-Each task must be:
-- 5–10 minutes max
-- single responsibility
-- testable independently
+1. analysis
+2. codebase
+3. planning
+4. decomposition
+5. implementation
+6. review
+7. report
 
----
-
-## Example decomposition
-
-Feature: "Add slow_request"
-
-Tasks:
-1. Add API type enum (fast)
-2. Add delay logic (fast)
-3. Add Prisma save (fast)
-4. Add metric histogram (fast)
-5. Add log event (fast)
-6. Add frontend option (fast)
-7. Update history UI (fast)
+Never rerun completed phases.
 
 ---
 
-## Context persistence
+## Phase 1 — PRD Analysis
 
-Store state:
+Goal:
+- Extract features
+- Extract constraints
+- Extract required files
+- Extract acceptance criteria
+
+Delegate to a fast model.
+
+Expected output:
 
 ```json
 {
-  "currentPhase": "implementation",
-  "completedTasks": 3
+  "requirements": [],
+  "constraints": [],
+  "acceptanceCriteria": [],
+  "missingCapabilities": []
 }
