@@ -22,10 +22,11 @@ services:
       - postgres
       - prometheus
       - loki
+    env_file:
+      - .env
     environment:
       PORT: 3001
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/signal_lab
-      SENTRY_DSN: ${SENTRY_DSN}
       NODE_ENV: development
     ports:
       - '3001:3001'

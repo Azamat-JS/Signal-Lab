@@ -2,15 +2,15 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-RUN corepack enable
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY apps/backend/package.json ./
 COPY apps/backend/pnpm-lock.yaml ./
 COPY prisma ./prisma
 
-RUN corepack enable
-RUN corepack prepare pnpm@latest --activate
 RUN pnpm install
+
+RUN pnpm prisma generate
 
 COPY apps/backend .
 
