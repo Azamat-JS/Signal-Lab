@@ -71,7 +71,7 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
             registers: [registry],
         });
         this.durationHistogram = new prom_client_1.Histogram({
-            name: 'scenario_duration_ms',
+            name: 'scenario_duration_sec',
             help: 'Scenario execution duration',
             labelNames: ['type'],
             buckets: [50, 100, 250, 500, 1000, 2000, 5000],
@@ -105,7 +105,7 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
         await this.prisma.scenarioRun.create({
             data: {
                 type: 'success',
-                metadata: name ? { name } : undefined,
+                metadata: name ? { name } : {},
                 status: 'SUCCESS',
             }
         });
@@ -116,7 +116,7 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
             level: 'info',
             scenario: 'success',
             message: 'Scenario completed successfully',
-            duration,
+            duration: duration / 1000,
         }));
         return {
             success: true,
@@ -127,7 +127,7 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
         await this.prisma.scenarioRun.create({
             data: {
                 type: 'validation_error',
-                metadata: name ? { name } : undefined,
+                metadata: name ? { name } : {},
                 status: 'FAILED',
             },
         });
@@ -150,7 +150,7 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
         await this.prisma.scenarioRun.create({
             data: {
                 type: 'system_error',
-                metadata: name ? { name } : undefined,
+                metadata: name ? { name } : {},
                 status: 'FAILED',
             },
         });
@@ -158,7 +158,7 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
         const duration = Date.now() - startedAt;
         this.durationHistogram.observe({ type: 'system_error' }, duration / 1000);
         try {
-            throw new Error('Simulated unhandled exception');
+            throw new Error('Simulated system failure');
         }
         catch (error) {
             Sentry.captureException(error);
@@ -177,7 +177,7 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
         await this.prisma.scenarioRun.create({
             data: {
                 type: 'slow_request',
-                metadata: name ? { name } : undefined,
+                metadata: name ? { name } : {},
                 status: 'SUCCESS',
             },
         });
@@ -188,7 +188,7 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
             level: 'warn',
             scenario: 'slow_request',
             message: 'Slow request detected',
-            duration,
+            duration: duration / 1000,
         }));
         return {
             success: true,
