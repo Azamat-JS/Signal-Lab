@@ -71,7 +71,7 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
             registers: [registry],
         });
         this.durationHistogram = new prom_client_1.Histogram({
-            name: 'scenario_duration_sec',
+            name: 'scenario_run_duration_seconds',
             help: 'Scenario execution duration',
             labelNames: ['type'],
             buckets: [0.05, 0.1, 0.25, 0.5, 1, 2, 5],
@@ -90,6 +90,8 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
                     return await this.handleSystemError(name, startedAt);
                 case 'slow_request':
                     return await this.handleSlowRequest(name, startedAt);
+                case 'teapot':
+                    return await this.handleTeapotRequest(name, startedAt);
                 default:
                     throw new common_1.BadRequestException('Unknown scenario type');
             }
@@ -102,37 +104,49 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
         }
     }
     async handleSuccess(name, startedAt) {
-        await this.prisma.scenarioRun.create({
+        const duration = Date.now() - startedAt;
+        const run = await this.prisma.scenarioRun.create({
             data: {
                 type: 'success',
-                metadata: name ? { name } : {},
                 status: 'SUCCESS',
-            }
+                duration: duration / 1000,
+                metadata: name ? { name } : {},
+            },
         });
-        this.scenarioCounter.inc({ type: 'success', status: 'success' });
-        const duration = Date.now() - startedAt;
+        this.scenarioCounter.inc({
+            type: 'success',
+            status: 'success',
+        });
         this.durationHistogram.observe({ type: 'success' }, duration / 1000);
         this.logger.log(JSON.stringify({
+            timestamp: new Date().toISOString(),
             level: 'info',
-            scenario: 'success',
+            scenarioType: 'success',
+            scenarioId: run.id,
+            duration,
             message: 'Scenario completed successfully',
-            duration: duration / 1000,
         }));
         return {
-            success: true,
-            message: 'Success scenario completed',
+            id: run.id,
+            status: 'completed',
+            duration,
         };
     }
     async handleValidationError(name, startedAt) {
-        await this.prisma.scenarioRun.create({
+        const duration = Date.now() - startedAt;
+        const run = await this.prisma.scenarioRun.create({
             data: {
                 type: 'validation_error',
                 metadata: name ? { name } : {},
                 status: 'FAILED',
+                duration: duration / 1000
             },
         });
         this.errorCounter.inc({ type: 'validation_error' });
-        const duration = Date.now() - startedAt;
+        this.scenarioCounter.inc({
+            type: 'validation_error',
+            status: 'error',
+        });
         this.durationHistogram.observe({ type: 'validation_error' }, duration / 1000);
         Sentry.addBreadcrumb({
             category: 'validation',
@@ -141,21 +155,27 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
         });
         this.logger.warn(JSON.stringify({
             level: 'warn',
-            scenario: 'validation_error',
+            scenarioType: 'validation_error',
+            scenarioId: run.id,
             message: 'Invalid input provided',
         }));
         throw new common_1.BadRequestException('Validation failed');
     }
     async handleSystemError(name, startedAt) {
-        await this.prisma.scenarioRun.create({
+        const duration = Date.now() - startedAt;
+        const run = await this.prisma.scenarioRun.create({
             data: {
                 type: 'system_error',
                 metadata: name ? { name } : {},
                 status: 'FAILED',
+                duration: duration / 1000,
             },
         });
         this.errorCounter.inc({ type: 'system_error' });
-        const duration = Date.now() - startedAt;
+        this.scenarioCounter.inc({
+            type: 'system_error',
+            status: 'error',
+        });
         this.durationHistogram.observe({ type: 'system_error' }, duration / 1000);
         try {
             throw new Error('Simulated system failure');
@@ -164,7 +184,8 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
             Sentry.captureException(error);
             this.logger.error(JSON.stringify({
                 level: 'error',
-                scenario: 'system_error',
+                scenarioType: 'system_error',
+                scenarioId: run.id,
                 message: 'Unhandled exception thrown',
                 error: error.message,
             }));
@@ -174,26 +195,61 @@ let ScenarioService = ScenarioService_1 = class ScenarioService {
     async handleSlowRequest(name, startedAt) {
         const delay = Math.floor(Math.random() * 3000) + 2000;
         await new Promise((resolve) => setTimeout(resolve, delay));
-        await this.prisma.scenarioRun.create({
+        const duration = Date.now() - startedAt;
+        const run = await this.prisma.scenarioRun.create({
             data: {
                 type: 'slow_request',
                 metadata: name ? { name } : {},
                 status: 'SUCCESS',
+                duration: duration / 1000
             },
         });
         this.scenarioCounter.inc({ type: 'slow_request', status: 'success' });
-        const duration = Date.now() - startedAt;
         this.durationHistogram.observe({ type: 'slow_request' }, duration / 1000);
         this.logger.warn(JSON.stringify({
             level: 'warn',
-            scenario: 'slow_request',
+            scenarioType: 'slow_request',
+            scenarioId: run.id,
             message: 'Slow request detected',
             duration: duration / 1000,
         }));
         return {
             success: true,
-            message: `Slow scenario finished in ${duration / 1000}sec`,
+            message: 'Slow request scenario completed'
         };
+    }
+    async handleTeapotRequest(name, startedAt) {
+        const delay = Math.floor(Math.random() * 3000) + 2000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        const duration = Date.now() - startedAt;
+        const run = await this.prisma.scenarioRun.create({
+            data: {
+                type: 'teapot',
+                metadata: {
+                    ...(name ? { name } : {}),
+                    easter: true,
+                },
+                status: 'SUCCESS',
+                duration: duration / 1000,
+            },
+        });
+        this.scenarioCounter.inc({ type: 'teapot', status: 'success' });
+        this.durationHistogram.observe({ type: 'teapot' }, duration / 1000);
+        this.logger.warn(JSON.stringify({
+            level: 'warn',
+            scenarioType: 'teapot',
+            scenarioId: run.id,
+            message: 'Teapot detected',
+            duration: duration / 1000,
+            metadata: {
+                ...(name ? { name } : {}),
+                easter: true,
+            }
+        }));
+        throw new common_1.HttpException({
+            signal: 42,
+            message: "I'm a teapot",
+        }, 418);
     }
 };
 exports.ScenarioService = ScenarioService;

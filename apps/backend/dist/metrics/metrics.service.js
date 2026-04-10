@@ -32,7 +32,7 @@ let MetricsService = class MetricsService {
             registers: [this.registry],
         });
         this.scenarioDuration = new prom_client_1.Histogram({
-            name: 'scenario_duration_sev',
+            name: 'scenario_run_duration_seconds',
             help: 'Scenario duration in seconds',
             labelNames: ['type'],
             buckets: [0.05, 0.1, 0.25, 0.5, 1, 2, 5],
