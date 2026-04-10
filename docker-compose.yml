@@ -85,9 +85,8 @@ services:
     ports:
       - "3002:3000"
     volumes:
-      - grafana_data:/var/lib/grafana
-      - ./infra/grafana/provisioning:/etc/grafana/provisioning
-      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./infra/grafana/dashboards:/etc/grafana/dashboards
+      - ./infra/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
 
 volumes:
   postgres_data:

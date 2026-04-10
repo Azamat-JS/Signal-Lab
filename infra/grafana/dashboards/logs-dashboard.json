@@ -1,0 +1,28 @@
+{
+    "uid": "logs-dashboard",
+    "title": "Signal Lab - Logs (Loki)",
+    "schemaVersion": 38,
+    "version": 1,
+    "panels": [
+        {
+            "type": "logs",
+            "title": "Backend Logs",
+            "datasource": "Loki",
+            "targets": [
+                {
+                    "expr": "{service=\"backend\"}"
+                }
+            ],
+            "gridPos": {
+                "x": 0,
+                "y": 0,
+                "w": 24,
+                "h": 12
+            }
+        }
+    ],
+    "time": {
+        "from": "now-1h",
+        "to": "now"
+    }
+}
