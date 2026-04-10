@@ -1,0 +1,93 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: signal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: signal_lab
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./apps/backend/Dockerfile
+    container_name: signal-backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - prometheus
+      - loki
+    environment:
+      PORT: 3001
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/signal_lab
+      SENTRY_DSN: ${SENTRY_DSN}
+      NODE_ENV: development
+    ports:
+      - '3001:3001'
+    volumes:
+      - ./apps/backend:/app
+      - /app/node_modules
+
+  frontend:
+    build:
+      context: ./apps/frontend
+    container_name: signal-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: signal-prometheus
+    restart: unless-stopped
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  loki:
+    image: grafana/loki:2.9.8
+    container_name: signal-loki
+    restart: unless-stopped
+    ports:
+      - '3100:3100'
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:2.9.8
+    container_name: signal-promtail
+    restart: unless-stopped
+    depends_on:
+      - loki
+    volumes:
+      - ./infra/promtail/promtail.yml:/etc/promtail/config.yml
+      - ./apps/backend/logs:/var/log/signal-lab
+    command: -config.file=/etc/promtail/config.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: signal-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+      - loki
+    ports:
+      - "3002:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards
+
+volumes:
+  postgres_data:
+  grafana_data:

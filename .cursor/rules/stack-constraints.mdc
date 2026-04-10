@@ -1,0 +1,18 @@
+# Stack Constraints
+
+## Allowed stack
+- Frontend: Next.js (App Router), React Hook Form, TanStack Query, shadcn/ui, Tailwind
+- Backend: NestJS (TypeScript strict)
+- DB: PostgreSQL with Prisma
+
+## Forbidden
+- Redux
+- SWR
+- TypeORM / Sequelize
+- MongoDB
+- Express standalone (outside NestJS)
+
+## Rules
+- All server state must use TanStack Query
+- All forms must use React Hook Form
+- All DB access must go through Prisma

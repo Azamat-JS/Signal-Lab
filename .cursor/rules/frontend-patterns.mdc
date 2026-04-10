@@ -1,0 +1,15 @@
+# Frontend Patterns
+
+## State management
+- Server state → TanStack Query
+- Forms → React Hook Form
+- UI → shadcn/ui components
+
+## Rules
+- No Redux
+- No direct fetch in components (use hooks)
+- All API calls must be centralized in /api layer
+
+## UX rules
+- Always show loading state on mutation
+- Always show toast on success/failure

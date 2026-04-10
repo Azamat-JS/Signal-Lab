@@ -1,0 +1,15 @@
+# Error Handling Rules
+
+## Backend
+- validation_error → HTTP 400
+- system_error → throw exception (500)
+- slow_request → normal response after delay
+- teapot → HTTP 418
+
+## Logging
+- Every error must be logged in structured JSON
+- Every error must increment Prometheus counter
+
+## Sentry
+- Only system_error sends exception
+- validation_error adds breadcrumb only

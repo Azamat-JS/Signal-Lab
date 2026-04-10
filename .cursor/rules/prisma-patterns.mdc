@@ -1,0 +1,14 @@
+# Prisma Patterns
+
+## Rules
+- All DB access must use Prisma Client
+- No raw SQL unless explicitly required (default: forbidden)
+- All writes must go through service layer
+
+## ScenarioRun model usage
+Every scenario execution must be stored:
+- type
+- status
+- responseCode
+- durationMs
+- metadata (optional)

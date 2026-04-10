@@ -1,0 +1,24 @@
+# Observability Conventions
+
+## Metrics naming
+Use prefix:
+signal_lab_
+
+Examples:
+- signal_lab_scenario_runs_total
+- signal_lab_scenario_duration_seconds
+- signal_lab_errors_total
+
+## Logs format (JSON only)
+{
+  "app": "signal-lab",
+  "scenarioType": "...",
+  "scenarioId": "...",
+  "level": "info|warn|error",
+  "durationMs": 0
+}
+
+## Sentry rules
+- Only system_error must create exception
+- validation_error uses breadcrumb only
+- Never send sensitive data
